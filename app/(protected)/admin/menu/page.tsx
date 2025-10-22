@@ -1,0 +1,224 @@
+"use client";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import AccessGuard from "@/components/access-guard";
+import LayoutWrapper from "@/components/layout-wrapper";
+import Link from "next/link";
+import { Breadcrumb } from "reui";
+
+function AdminMenuContent() {
+  const [sidebarMenuItems, setSidebarMenuItems] = useState<any[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState<any>({ title: '', path: '', order: 0, visibleForRoles: [] });
+
+  const getRoleLabel = (r: string) => {
+    const v = r?.toLowerCase();
+    if (v === 'owner') return 'Владелец';
+    if (v === 'partner') return 'Партнер';
+    if (v === 'point') return 'Заведение';
+    if (v === 'employee') return 'Сотрудник';
+    return r;
+  };
+  const [loading, setLoading] = useState(true);
+
+  const fetchSidebarMenuItems = async () => {
+    try {
+      const response = await fetch('/api/sidebar-menu');
+      if (response.ok) {
+        const data = await response.json();
+        setSidebarMenuItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching sidebar menu items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSidebarMenuItems();
+    (async () => {
+      const r = await fetch('/api/roles');
+      if (r.ok) {
+        const data = await r.json();
+        setRoles(data.map((x:any)=>x.role));
+      }
+    })();
+  }, []);
+
+  const updateVisibility = async (id: string, visibleForRoles: string[]) => {
+    const payload = sidebarMenuItems.find(i=>i.id===id);
+    if (!payload) return;
+    const res = await fetch('/api/sidebar-menu', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        title: payload.title,
+        path: payload.path,
+        icon: payload.icon,
+        order: payload.order,
+        isActive: payload.isActive,
+        visibleForRoles
+      })
+    });
+    if (res.ok) {
+      setSidebarMenuItems(prev => prev.map(i => i.id===id ? { ...i, visibleForRoles } : i));
+    }
+  };
+
+  return (
+    <AccessGuard>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-6">
+          <div className="mb-6">
+            <Breadcrumb
+              className="mb-4"
+              items={[
+                { label: "Админ-панель", href: "/admin" },
+                { label: "Управление боковым меню", isCurrent: true },
+              ]}
+            />
+            <h1 className="text-3xl font-bold">Управление боковым меню</h1>
+            <p className="text-muted-foreground">Настройка бокового навигационного меню системы</p>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Элементы бокового меню</CardTitle>
+                  <CardDescription>
+                    Настройка элементов навигации
+                  </CardDescription>
+                </div>
+                <Button onClick={()=>{ setShowForm(true); setForm({ title:'', path:'', order:0, visibleForRoles:[] }); }} className="bg-blue-600 hover:bg-blue-700">+ Добавить пункт меню</Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {showForm && (
+                <div className="mb-4 p-4 rounded-xl border bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input className="border rounded-md px-3 py-2" placeholder="Название" value={form.title} onChange={e=>setForm({...form,title:e.target.value})} />
+                    <input className="border rounded-md px-3 py-2" placeholder="/path" value={form.path} onChange={e=>setForm({...form,path:e.target.value})} />
+                    <input className="border rounded-md px-3 py-2" type="number" placeholder="Порядок" value={form.order} onChange={e=>setForm({...form,order:Number(e.target.value)})} />
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-xs text-gray-500 mb-2">Кто видит пункт (оставьте пустым — видят все):</div>
+                    <div className="flex flex-wrap gap-2">
+                      {roles.map(r => {
+                        const active = (form.visibleForRoles || []).includes(r);
+                        return (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={()=>{
+                              const set = new Set(form.visibleForRoles || []);
+                              if (set.has(r)) set.delete(r); else set.add(r);
+                              setForm({...form, visibleForRoles: Array.from(set)});
+                            }}
+                            className={`px-3 py-1 rounded-full text-xs border ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                          >{getRoleLabel(r)}</button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button onClick={async ()=>{
+                      const isEdit = Boolean(form.id);
+                      const res = await fetch('/api/sidebar-menu',{
+                        method: isEdit ? 'PUT' : 'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({
+                          id: form.id,
+                          title: form.title,
+                          path: form.path,
+                          icon: form.icon || '',
+                          order: Number(form.order) || 0,
+                          isActive: form.isActive !== false,
+                          visibleForRoles: form.visibleForRoles || []
+                        })
+                      });
+                      if(res.ok){ setShowForm(false); await fetchSidebarMenuItems(); }
+                    }}>Сохранить</Button>
+                    <Button variant="outline" onClick={()=>setShowForm(false)}>Отмена</Button>
+                  </div>
+                </div>
+              )}
+              {loading ? (
+                <div className="text-center py-4">Загрузка...</div>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  {sidebarMenuItems.map((item: any) => (
+                    <div key={item.id} className="p-3 border border-gray-200 rounded-xl bg-white hover:shadow-sm transition-shadow">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <h3 className="font-medium text-gray-900 text-sm">{item.title}</h3>
+                            <p className="text-xs text-gray-500">{item.path}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant={item.isActive ? 'success' : 'secondary'}>
+                                {item.isActive ? 'активный' : 'неактивный'}
+                              </Badge>
+                              <div className="text-xs text-gray-500">Доступ: {item.visibleForRoles?.length? item.visibleForRoles.join(', '): 'все роли'}</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={()=>{ setShowForm(true); setForm({ ...item, visibleForRoles: item.visibleForRoles || [] }); }}
+                            className="h-7 px-2 text-xs"
+                          >
+                            Редактировать
+                          </Button>
+                          <div className="hidden md:flex flex-wrap gap-1 max-w-[280px]">
+                            {roles.map(r => {
+                              const active = (item.visibleForRoles || []).includes(r);
+                              return (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={()=>{
+                                    const set = new Set(item.visibleForRoles || []);
+                                    if (set.has(r)) set.delete(r); else set.add(r);
+                                    updateVisibility(item.id, Array.from(set));
+                                  }}
+                                  className={`px-2 py-1 rounded-full text-[11px] border ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                                >{getRoleLabel(r)}</button>
+                              );
+                            })}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {/* TODO: Delete menu item */}}
+                            className="h-7 px-2 text-xs text-red-600 border-red-300 hover:text-white hover:bg-red-600 hover:border-red-600"
+                          >
+                            Удалить
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </AccessGuard>
+  );
+}
+
+export default function AdminMenuPage() {
+  return (
+    <LayoutWrapper>
+      <AdminMenuContent />
+    </LayoutWrapper>
+  );
+}
