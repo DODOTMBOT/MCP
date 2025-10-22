@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import AccessGuard from "@/components/access-guard";
 import LayoutWrapper from "@/components/layout-wrapper";
 import Link from "next/link";
-import { Breadcrumb } from "reui";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 function AdminRolesContent() {
   const [roles, setRoles] = useState([]);
@@ -68,10 +68,10 @@ function AdminRolesContent() {
                       <div key={role.role} className="flex items-center justify-between p-4 border border-gray-200 rounded-2xl bg-white hover:shadow-sm transition-shadow">
                         <div>
                           <h3 className="font-medium">
-                            {role.role === 'owner' ? 'Владелец платформы' :
-                             role.role === 'partner' ? 'Владелец заведения' :
-                             role.role === 'point' ? 'Заведение' :
-                             role.role === 'employee' ? 'Сотрудник' : role.role}
+                            {role.role === 'PLATFORM_OWNER' ? 'Владелец платформы' :
+                             role.role === 'PARTNER' ? 'Партнер' :
+                             role.role === 'MANAGER' ? 'Менеджер' :
+                             role.role === 'EMPLOYEE' ? 'Сотрудник' : role.role}
                           </h3>
                           <p className="text-sm text-gray-500">{role.count} пользователей</p>
                         </div>

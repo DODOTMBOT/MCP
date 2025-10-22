@@ -127,3 +127,4 @@ scripts/debug-*.js
 scripts/check-*.js
 scripts/fix-*.js
 scripts/list-*.js
+.cursor/
