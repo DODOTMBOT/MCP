@@ -20,13 +20,11 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["*"],
+      "@/app/*": ["app/*"],
       "@/lib/*": ["lib/*"],
       "@/components/*": ["components/*"],
-      "@/app/*": ["app/*"],
-      "@/modules/*": ["app/(protected)/*"],
-      "@/modules/template/*": ["app/(protected)/_template/*"],
-      "reui": ["./reui/index.tsx"]
+      "@/modules/*": ["app/(protected)/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

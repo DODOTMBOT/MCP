@@ -99,3 +99,62 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   };
 }
+
+/**
+ * Проверка доступа по пути
+ */
+export async function checkAccessByPath(path: string): Promise<boolean> {
+  try {
+    const { prisma } = await import("@/lib/db");
+    const { auth } = await import("@/lib/auth");
+    const { unstable_noStore: noStore } = await import("next/cache");
+    
+    noStore();
+    const session = await auth();
+    const roleName = (session?.user as any)?.role ?? 'EMPLOYEE';
+    
+    const menu = await prisma.menuItem.findUnique({ where: { path }, select: { id: true } });
+    if (!menu) return true; // нет явного пункта в меню — не блокируем
+    
+    const allowed = await prisma.accessRolePageAccess.findFirst({
+      where: { menuItemId: menu.id, canAccess: true, role: { name: roleName } },
+      select: { id: true },
+    });
+    
+    return Boolean(allowed);
+  } catch (error) {
+    console.error('[checkAccessByPath] Ошибка:', error);
+    return false; // В случае ошибки блокируем доступ
+  }
+}
+
+/**
+ * Получение доступного меню для роли
+ */
+export async function getAccessibleMenu(userRoleName: string) {
+  try {
+    const { prisma } = await import("@/lib/db");
+    const { unstable_noStore: noStore } = await import("next/cache");
+    
+    noStore();
+    // Нормализуем роль к нижнему регистру для соответствия с базой данных
+    const normalizedRoleName = userRoleName.toLowerCase();
+    const role = await prisma.role.findUnique({ where: { name: normalizedRoleName }, select: { id: true } });
+    if (!role) return [];
+
+    const items = await prisma.menuItem.findMany({
+      where: {
+        isActive: true as any, // our schema uses isActive; adapt to active if needed
+        accesses: { some: { roleId: role.id, canAccess: true } },
+        type: "sidebar",
+      },
+      orderBy: { order: 'asc' },
+      select: { id: true, title: true, path: true },
+    });
+
+    return items;
+  } catch (error) {
+    console.error('[getAccessibleMenu] Ошибка:', error);
+    return [];
+  }
+}

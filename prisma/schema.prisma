@@ -7,20 +7,45 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  firstName    String?
-  lastName     String?
-  avatar       String?
-  role         String   @default("EMPLOYEE")
-  partnerId    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  partnerCode  String?  @unique
-  partner      User?    @relation("UserPartner", fields: [partnerId], references: [id])
-  subordinates User[]   @relation("UserPartner")
+model Owner {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String
+  partners  Partner[]
+  createdAt DateTime  @default(now())
+}
+
+model Partner {
+  id        String    @id @default(cuid())
+  name      String
+  ownerId   String
+  owner     Owner     @relation(fields: [ownerId], references: [id])
+  points    Point[]
+}
+
+model Point {
+  id        String     @id @default(cuid())
+  name      String
+  partnerId String
+  partner   Partner    @relation(fields: [partnerId], references: [id])
+  employees Employee[]
+}
+
+model Employee {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      UserRole @default(EMPLOYEE)
+  pointId   String?
+  point     Point?   @relation(fields: [pointId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+enum UserRole {
+  OWNER
+  PARTNER
+  POINT
+  EMPLOYEE
 }
 
 model Page {
@@ -48,27 +73,11 @@ model MenuItem {
   parentId    String?
   createdAt   DateTime               @default(now())
   updatedAt   DateTime               @updatedAt
-  accesses    AccessRolePageAccess[]
   parent      MenuItem?              @relation("MenuHierarchy", fields: [parentId], references: [id])
   children    MenuItem[]             @relation("MenuHierarchy")
 }
 
-model Role {
-  id       String                 @id @default(cuid())
-  name     String                 @unique
-  accesses AccessRolePageAccess[]
-}
 
-model AccessRolePageAccess {
-  id         String   @id @default(cuid())
-  roleId     String
-  menuItemId String
-  canAccess  Boolean  @default(false)
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  role       Role     @relation(fields: [roleId], references: [id])
-
-  @@unique([roleId, menuItemId])
-}
 
 model RolePermission {
   id        String   @id @default(cuid())
