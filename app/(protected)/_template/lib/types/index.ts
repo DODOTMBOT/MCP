@@ -1,10 +1,7 @@
 /**
- * Типы для модуля
+ * Типы для модуля Template
  * 
- * Принципы:
- * - Все типы модуля в одном файле
- * - Экспорт через index.ts
- * - Использование префикса модуля
+ * Централизованное хранение всех TypeScript типов модуля
  */
 
 export interface TemplateItem {
@@ -13,6 +10,7 @@ export interface TemplateItem {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+  createdBy: string;
 }
 
 export interface TemplateCreateData {
@@ -27,7 +25,43 @@ export interface TemplateUpdateData {
 
 export interface TemplateFilters {
   search?: string;
-  status?: string;
+  status?: 'active' | 'inactive';
   dateFrom?: Date;
   dateTo?: Date;
+  createdBy?: string;
+}
+
+export interface TemplateListResponse {
+  items: TemplateItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface TemplateApiError {
+  message: string;
+  code: string;
+  details?: Record<string, any>;
+}
+
+// Типы для форм
+export interface TemplateFormData {
+  name: string;
+  description: string;
+}
+
+// Типы для компонентов
+export interface TemplateCardProps {
+  item: TemplateItem;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onView?: (id: string) => void;
+}
+
+export interface TemplateListProps {
+  items: TemplateItem[];
+  loading?: boolean;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onView?: (id: string) => void;
 }

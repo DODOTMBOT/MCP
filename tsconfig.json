@@ -24,6 +24,7 @@
       "@/lib/*": ["lib/*"],
       "@/components/*": ["components/*"],
       "@/modules/*": ["app/(protected)/*"],
+      "@/modules/template/*": ["app/(protected)/_template/*"],
       "reui": ["./reui/index.tsx"]
     }
   },
