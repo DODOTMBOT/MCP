@@ -20,14 +20,33 @@ export default function Sidebar() {
   if (!items.length) return null;
 
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-gray-900 rounded-tr-3xl flex flex-col p-4 z-50">
+    <div className="fixed left-0 top-0 h-screen w-64 rounded-tr-3xl flex flex-col p-4 z-50" style={{ backgroundColor: '#161B26' }}>
       <div className="mb-6">
-        <div className="text-white font-bold text-xl">DODO IS</div>
+        <div className="font-bold text-3xl w-full text-center">
+          <span style={{ color: '#FFFFFF' }}>Unit</span>
+          <span style={{ color: '#F9B42D' }}>One</span>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto">
         <nav className="space-y-1">
           {items.map((item) => (
-            <Link key={item.id} href={item.path} className="flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-all duration-300">
+            <Link
+              key={item.id}
+              href={item.path}
+              className="flex items-center p-3 rounded-lg transition-all duration-300"
+              style={{
+                color: '#FFFFFF',
+                backgroundColor: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#F9B42D';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+            >
               <span className="font-medium text-sm">{item.title}</span>
             </Link>
           ))}
