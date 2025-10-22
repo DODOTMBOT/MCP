@@ -11,22 +11,49 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [userType, setUserType] = useState<"partner" | "employee">("partner");
+  const [partnerCode, setPartnerCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError("");
+
+    // Валидация
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Имя и фамилия обязательны");
+      setLoading(false);
+      return;
+    }
+
+    if (userType === "employee" && !partnerCode.trim()) {
+      setError("Код партнера обязателен для сотрудников");
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, firstName, lastName }),
+      body: JSON.stringify({ 
+        email, 
+        password, 
+        firstName: firstName.trim(), 
+        lastName: lastName.trim(),
+        userType,
+        partnerCode: userType === "employee" ? partnerCode.trim() : undefined
+      }),
     });
     setLoading(false);
-    if (res.ok) router.replace("/login");
-    else {
+    
+    if (res.ok) {
+      router.replace("/login");
+    } else {
       const data = await res.json().catch(() => ({}));
-      alert(data.message ?? "Ошибка регистрации");
+      setError(data.message ?? "Ошибка регистрации");
     }
   }
 
@@ -37,10 +64,13 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl font-bold text-white">D</span>
+              <span className="text-2xl font-bold text-white">U</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">DODO IS</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            <span style={{ color: '#FFFFFF' }}>Unit</span>
+            <span style={{ color: '#F9B42D' }}>One</span>
+          </h1>
           <p className="text-gray-600">Система управления операционными процессами</p>
         </div>
 
@@ -51,11 +81,17 @@ export default function RegisterPage() {
             <p className="text-gray-600">Создайте аккаунт для доступа к Check-Point</p>
           </div>
 
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={onSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                  Имя (необязательно)
+                  Имя *
                 </Label>
                 <Input
                   id="firstName"
@@ -64,12 +100,13 @@ export default function RegisterPage() {
                   onChange={(e) => setFirstName(e.target.value)}
                   className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Введите ваше имя"
+                  required
                 />
               </div>
 
               <div>
                 <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                  Фамилия (необязательно)
+                  Фамилия *
                 </Label>
                 <Input
                   id="lastName"
@@ -78,12 +115,13 @@ export default function RegisterPage() {
                   onChange={(e) => setLastName(e.target.value)}
                   className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Введите вашу фамилию"
+                  required
                 />
               </div>
 
               <div>
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email
+                  Email *
                 </Label>
                 <Input
                   id="email"
@@ -98,7 +136,7 @@ export default function RegisterPage() {
               
               <div>
                 <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Пароль
+                  Пароль *
                 </Label>
                 <Input
                   id="password"
@@ -110,6 +148,59 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+
+              {/* Выбор типа пользователя */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Кем вы хотите стать? *
+                </Label>
+                <div className="mt-2 space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="userType"
+                      value="partner"
+                      checked={userType === "partner"}
+                      onChange={(e) => setUserType(e.target.value as "partner" | "employee")}
+                      className="mr-3"
+                    />
+                    <span className="text-sm text-gray-700">Партнер (владелец заведения)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="userType"
+                      value="employee"
+                      checked={userType === "employee"}
+                      onChange={(e) => setUserType(e.target.value as "partner" | "employee")}
+                      className="mr-3"
+                    />
+                    <span className="text-sm text-gray-700">Сотрудник</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Код партнера (только для сотрудников) */}
+              {userType === "employee" && (
+                <div>
+                  <Label htmlFor="partnerCode" className="text-sm font-medium text-gray-700">
+                    Код партнера *
+                  </Label>
+                  <Input
+                    id="partnerCode"
+                    type="text"
+                    value={partnerCode}
+                    onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
+                    className="mt-1 w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Введите код партнера (например: ABC12)"
+                    required
+                    maxLength={5}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Получите код у вашего партнера
+                  </p>
+                </div>
+              )}
             </div>
 
             <Button

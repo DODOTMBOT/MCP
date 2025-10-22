@@ -20,16 +20,22 @@ export default function LoginPage() {
     setError("");
     
     try {
-      // Use redirect: true to let NextAuth handle the redirect
-      await signIn("credentials", { 
+      const result = await signIn("credentials", { 
         email, 
         password,
-        redirect: true,
-        callbackUrl: "/dashboard"
+        redirect: false
       });
+      
+      if (result?.error) {
+        setError("Неверные учетные данные");
+      } else if (result?.ok) {
+        // Перенаправляем вручную после успешного входа
+        window.location.href = "/dashboard";
+      }
     } catch (error) {
       console.error("Login error:", error);
       setError("Ошибка при входе");
+    } finally {
       setLoading(false);
     }
   }
@@ -41,10 +47,13 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-2xl font-bold text-white">D</span>
+              <span className="text-2xl font-bold text-white">U</span>
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">DODO IS</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            <span style={{ color: '#FFFFFF' }}>Unit</span>
+            <span style={{ color: '#F9B42D' }}>One</span>
+          </h1>
           <p className="text-gray-600">Система управления операционными процессами</p>
         </div>
 
