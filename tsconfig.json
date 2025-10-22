@@ -23,6 +23,7 @@
       "@/*": ["./*"],
       "@/lib/*": ["lib/*"],
       "@/components/*": ["components/*"],
+      "@/app/*": ["app/*"],
       "@/modules/*": ["app/(protected)/*"],
       "@/modules/template/*": ["app/(protected)/_template/*"],
       "reui": ["./reui/index.tsx"]
