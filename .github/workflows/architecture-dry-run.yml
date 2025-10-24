@@ -1,0 +1,38 @@
+name: Architecture guardrails (dry-run)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'dependency-cruiser.config.cjs'
+      - 'scripts/create-dependency-graph.cjs'
+      - 'docs/architecture/**'
+      - 'diagrams/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/architecture-dry-run.yml'
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency boundary check (dry-run)
+        run: npm run architecture:check
+
+      - name: Generate dependency graph (dry-run)
+        continue-on-error: true
+        run: |
+          npm run architecture:graph
+          git diff --stat diagrams/dep-graph.json diagrams/dep-graph.svg || true
